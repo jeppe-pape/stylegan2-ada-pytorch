@@ -106,7 +106,7 @@ def line_interpolate(zs, steps, easing):
                     fr = 121 * t * t / 16
                 elif (t < 8/11):
                     fr = (363 / 40.0 * t * t) - (99 / 10.0 * t) + 17 / 5.0
-                elif t < 9/ 0:
+                elif t < 9/ 10:
                     fr = (4356 / 361.0 * t * t) - (35442 / 1805.0 * t) + 16061 / 1805.0
                 else:
                     fr = (54 / 5.0 * t * t) - (513 / 25.0 * t) + 268 / 25.0
@@ -374,14 +374,22 @@ def generate_images(
         if seeds is not None:
             seedstr = '_'.join([str(seed) for seed in seeds])
             vidname = f'{process}-{interpolation}-seeds_{seedstr}-{fps}fps'
-        elif(interpolation=='noiseloop' or 'circularloop'):
+        elif(interpolation in ('noiseloop', 'circularloop')):
             vidname = f'{process}-{interpolation}-{diameter}dia-seed_{random_seed}-{fps}fps'
 
 
         interpolate(G,device,projected_w,seeds,random_seed,space,truncation_psi,label,frames,noise_mode,dirpath,interpolation,easing,diameter,res)
 
         # convert to video
-        cmd=f'ffmpeg -y -r {fps} -i {dirpath}/frame%04d.png -vcodec libx264 -pix_fmt yuv420p {outdir}/{vidname}.mp4'
+        if (interpolation in ('noiseloop', 'circularloop')):
+          print("Interpolation: ", interpolation)
+          print("Noise/Circular")
+          cmd=f'ffmpeg -y -r {fps} -i {dirpath}/frame%04d.png -vcodec libx264 -pix_fmt yuv420p  -vframes {frames} {outdir}/{vidname}.mp4'
+          print(cmd)
+        else:
+          print("Linear", seeds)
+          cmd=f'ffmpeg -y -r {fps} -i {dirpath}/frame%04d.png -vcodec libx264 -pix_fmt yuv420p  -vframes {frames * (len(seeds) - 1)} {outdir}/{vidname}.mp4'
+          print(cmd)
         subprocess.call(cmd, shell=True)
 
     elif(process=='truncation'):
